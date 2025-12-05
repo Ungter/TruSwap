@@ -4,6 +4,7 @@ import { PrivyProvider } from "@privy-io/react-auth";
 import { WagmiProvider, createConfig } from "@privy-io/wagmi";
 import { base } from "viem/chains";
 import { http } from "wagmi";
+import { createSolanaRpc, createSolanaRpcSubscriptions } from "@solana/kit";
 
 // Configure wagmi with Base as the primary chain
 const config = createConfig({
@@ -34,6 +35,15 @@ export const PrivyProviderWrapper = ({ children }: { children: React.ReactNode }
                         createOnLogin: "all-users",
                     },
                     showWalletUIs: true,
+                },
+                // Configure Solana RPC
+                solana: {
+                    rpcs: {
+                        "solana:mainnet": {
+                            rpc: createSolanaRpc("https://api.mainnet-beta.solana.com"),
+                            rpcSubscriptions: createSolanaRpcSubscriptions("wss://api.mainnet-beta.solana.com"),
+                        },
+                    },
                 },
             }}
         >

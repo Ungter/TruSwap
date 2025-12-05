@@ -5,7 +5,7 @@ import { erc20Abi, maxUint256, parseUnits, encodeFunctionData } from "viem";
 import { useAccount, useReadContract, useWalletClient, useWriteContract, usePublicClient } from "wagmi";
 import { PublicKey, VersionedTransaction } from "@solana/web3.js";
 import { usePrivy, useSendTransaction } from "@privy-io/react-auth";
-import { useWallets as useSolanaWallets } from "@privy-io/react-auth/solana";
+import { useWallets as useSolanaWallets, useSignAndSendTransaction } from "@privy-io/react-auth/solana";
 import { base } from "viem/chains";
 import { BaseLogo, SolanaLogo, USDCLogo, ArrowRight } from "./ChainLogos";
 
@@ -421,6 +421,7 @@ const BaseToSolana = () => {
 const SolanaToBase = () => {
     const { authenticated, login } = usePrivy();
     const { wallets } = useSolanaWallets();
+    const { signAndSendTransaction } = useSignAndSendTransaction();
     // Find the Privy embedded wallet (using first wallet as fallback)
     const solanaWallet = wallets.find((w: any) => w.walletClientType === "privy" || w.standardWallet?.name === "Privy") || wallets[0];
 
@@ -487,34 +488,19 @@ const SolanaToBase = () => {
                 throw new Error("No transaction found in order response");
             }
 
-            setStatus("Please sign the transaction...");
-            const swapTransactionBuf = Buffer.from(quote.transaction, "base64");
-            const transaction = VersionedTransaction.deserialize(swapTransactionBuf);
+            setStatus("Signing and sending transaction...");
 
-            // Use the embedded wallet's signTransaction method
-            const signedTransaction = await solanaWallet.signTransaction(transaction as any);
-            const signedTransactionBase64 = Buffer.from((signedTransaction as any).serialize()).toString("base64");
+            // Decode the base64 transaction to Uint8Array
+            const transactionBytes = new Uint8Array(Buffer.from(quote.transaction, "base64"));
 
-            setStatus("Executing swap...");
-            const headers: Record<string, string> = { "Content-Type": "application/json" };
-            if (process.env.NEXT_PUBLIC_JUPITER_API_KEY) {
-                headers["x-api-key"] = process.env.NEXT_PUBLIC_JUPITER_API_KEY;
-            }
-
-            const executeResponse = await fetch("https://api.jup.ag/ultra/v1/execute", {
-                method: "POST",
-                headers,
-                body: JSON.stringify({
-                    signedTransaction: signedTransactionBase64,
-                    requestId: quote.requestId,
-                }),
+            // Use Privy's signAndSendTransaction hook for proper wallet handling
+            const result = await signAndSendTransaction({
+                transaction: transactionBytes,
+                wallet: solanaWallet,
             });
 
-            const executeData = await executeResponse.json();
-            if (executeData.error) throw new Error(executeData.error);
-
-            setStatus("Swap executed! Bridging USDC...");
-            alert("Swap successful! USDC is now in your wallet. \n\nBridging from Solana is not fully implemented in this demo. Please use the official Circle bridge or wait for the next update.");
+            setStatus("Swap executed! Transaction signature: " + result.signature);
+            alert("Swap successful! USDC is now in your wallet. \n\nTransaction: " + result.signature + "\n\nBridging from Solana is not fully implemented in this demo. Please use the official Circle bridge or wait for the next update.");
             setStatus("Swap successful. Bridging pending implementation.");
 
         } catch (error) {
