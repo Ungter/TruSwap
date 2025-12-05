@@ -8,7 +8,6 @@ A seamless cross-chain bridge enabling USDC transfers between **Base** (Ethereum
 ## Table of Contents
 
 - [Problem Being Solved](#problem-being-solved)
-- [Layer 2 Advantages](#layer-2-advantages)
 - [Architecture Overview](#architecture-overview)
 - [Tech Stack](#tech-stack)
 - [Setup](#setup)
