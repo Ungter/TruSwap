@@ -1,4 +1,5 @@
 I didnt have time to do a demo :(
+Also only base bridges are working right now, I also didn't have time to fix the CCTP after the user swaps for USDC on solana.
 
 # CrossPay - Cross-Chain Bridge Application
 
