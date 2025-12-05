@@ -24,27 +24,6 @@ The reason I created this app is because theres always sometimes when I try to b
 We use Kyberswap and Jupiter to aggregate the best route to swap any token to USDC, and then use Circle's CCTP to bridge the USDC to Solana. 
 
 
-## Layer 2 Advantages
-
-### Why Base?
-
-Base is an Ethereum L2 built on the OP Stack (Optimistic Rollup) that provides:
-
-| Feature | Ethereum Mainnet | Base L2 |
-|---------|-----------------|---------|
-| Transaction Cost | $5-50+ | $0.01-0.10 |
-| Confirmation Time | 12-15 seconds | <2 seconds |
-| Throughput | ~15 TPS | ~2000+ TPS |
-| Security | Native | Inherited from Ethereum |
-
-### EVM Compatibility
-
-Base maintains full EVM compatibility, meaning:
-- All Ethereum smart contracts work without modification
-- Standard tooling (Hardhat, Foundry, ethers.js) works seamlessly
-- Existing DeFi protocols can be accessed directly
-- Circle's native USDC and CCTP contracts are deployed on Base
-
 ## Architecture Overview
 
 ```
