@@ -447,17 +447,23 @@ const SolanaToBase = () => {
         setLoading(true);
         setQuote(null);
         try {
-            const quoteResponse = await fetch(`https://quote-api.jup.ag/v6/quote?inputMint=${tokenIn}&outputMint=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v&amount=${parseFloat(amount) * 1e9}&slippageBps=50`);
+            // Using lite-api.jup.ag - public free endpoint (quote-api.jup.ag DNS issues)
+            const quoteResponse = await fetch(`https://lite-api.jup.ag/v6/quote?inputMint=${tokenIn}&outputMint=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v&amount=${Math.floor(parseFloat(amount) * 1e9)}&slippageBps=50`);
             const quoteData = await quoteResponse.json();
 
             if (quoteData.outAmount) {
                 setQuote(quoteData);
             } else {
                 console.error("Error fetching quote:", quoteData);
-                alert("Failed to fetch quote");
+                setStatus("Failed to fetch quote from Jupiter");
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error("Error fetching quote:", error);
+            if (error.message?.includes("Failed to fetch") || error.name === "TypeError") {
+                setStatus("Network error: Cannot reach Jupiter API. Please check your internet connection.");
+            } else {
+                setStatus("Error: " + error.message);
+            }
         } finally {
             setLoading(false);
         }

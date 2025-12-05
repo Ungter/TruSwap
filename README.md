@@ -15,18 +15,12 @@ A seamless cross-chain bridge enabling USDC transfers between **Base** (Ethereum
 
 ## Problem Being Solved
 
-Cross-chain interoperability remains one of the biggest challenges in DeFi:
+The reason I created this app is because theres always sometimes when I try to bridge something, but I get either an error, or there isn't liquidity for the token I want to bridge.
 
-1. **Fragmented Liquidity**: Users hold assets on different chains but struggle to move them efficiently
-2. **High Transaction Costs**: Moving assets between chains often involves expensive bridging fees and gas costs
-3. **Complex User Experience**: Traditional bridging requires multiple wallets, manual steps, and technical knowledge
-4. **Security Risks**: Many bridges have been exploited due to centralized or vulnerable designs
+**Solution!!!**
 
-**CrossPay solves these problems by:**
-- Providing a unified interface for swapping any token to USDC and bridging to Solana (and vice versa)
-- Using Circle's CCTP for secure, native USDC transfers (no wrapped tokens)
-- Integrating Privy for embedded wallets with gas sponsorship (users don't need ETH/SOL for gas)
-- Leveraging Base L2 for dramatically lower transaction costs
+We use Kyberswap and Jupiter to aggregate the best route to swap any token to USDC, and then use Circle's CCTP to bridge the USDC to Solana. 
+
 
 ## Layer 2 Advantages
 
