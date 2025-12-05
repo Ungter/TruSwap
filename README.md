@@ -1,3 +1,5 @@
+I didnt have time to do a demo :(
+
 # CrossPay - Cross-Chain Bridge Application
 
 A seamless cross-chain bridge enabling USDC transfers between **Base** (Ethereum L2) and **Solana** using Circle's Cross-Chain Transfer Protocol (CCTP).
