@@ -1,36 +1,180 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# CrossPay - Cross-Chain Bridge Application
 
-## Getting Started
+A seamless cross-chain bridge enabling USDC transfers between **Base** (Ethereum L2) and **Solana** using Circle's Cross-Chain Transfer Protocol (CCTP).
 
-First, run the development server:
+## Table of Contents
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- [Problem Being Solved](#problem-being-solved)
+- [Layer 2 Advantages](#layer-2-advantages)
+- [Architecture Overview](#architecture-overview)
+- [Tech Stack](#tech-stack)
+- [Setup](#setup)
+- [Local Development](#local-development)
+- [Environment Variables](#environment-variables)
+- [Features](#features)
+
+## Problem Being Solved
+
+Cross-chain interoperability remains one of the biggest challenges in DeFi:
+
+1. **Fragmented Liquidity**: Users hold assets on different chains but struggle to move them efficiently
+2. **High Transaction Costs**: Moving assets between chains often involves expensive bridging fees and gas costs
+3. **Complex User Experience**: Traditional bridging requires multiple wallets, manual steps, and technical knowledge
+4. **Security Risks**: Many bridges have been exploited due to centralized or vulnerable designs
+
+**CrossPay solves these problems by:**
+- Providing a unified interface for swapping any token to USDC and bridging to Solana (and vice versa)
+- Using Circle's CCTP for secure, native USDC transfers (no wrapped tokens)
+- Integrating Privy for embedded wallets with gas sponsorship (users don't need ETH/SOL for gas)
+- Leveraging Base L2 for dramatically lower transaction costs
+
+## Layer 2 Advantages
+
+### Why Base?
+
+Base is an Ethereum L2 built on the OP Stack (Optimistic Rollup) that provides:
+
+| Feature | Ethereum Mainnet | Base L2 |
+|---------|-----------------|---------|
+| Transaction Cost | $5-50+ | $0.01-0.10 |
+| Confirmation Time | 12-15 seconds | <2 seconds |
+| Throughput | ~15 TPS | ~2000+ TPS |
+| Security | Native | Inherited from Ethereum |
+
+### EVM Compatibility
+
+Base maintains full EVM compatibility, meaning:
+- All Ethereum smart contracts work without modification
+- Standard tooling (Hardhat, Foundry, ethers.js) works seamlessly
+- Existing DeFi protocols can be accessed directly
+- Circle's native USDC and CCTP contracts are deployed on Base
+
+## Architecture Overview
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        Frontend (Next.js)                        │
+│  ┌─────────────┐  ┌──────────────┐  ┌────────────────────────┐  │
+│  │   Privy     │  │ CrossChain   │  │     Wallet Display     │  │
+│  │   Auth      │  │   Bridge     │  │   (Base + Solana)      │  │
+│  └─────────────┘  └──────────────┘  └────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+          ┌───────────────────┼───────────────────┐
+          ▼                   ▼                   ▼
+┌─────────────────┐  ┌────────────────┐  ┌────────────────────┐
+│   KyberSwap     │  │   Jupiter      │  │      Privy         │
+│   Aggregator    │  │   Aggregator   │  │   Embedded Wallets │
+│   (Base DEX)    │  │   (Solana DEX) │  │   + Gas Sponsor    │
+└─────────────────┘  └────────────────┘  └────────────────────┘
+          │                   │                   │
+          ▼                   ▼                   ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    Circle CCTP Bridge                            │
+│  ┌─────────────────────┐        ┌─────────────────────────────┐ │
+│  │  TokenMessenger     │◄──────►│     TokenMessenger          │ │
+│  │  (Base)             │  CCTP  │     (Solana)                │ │
+│  └─────────────────────┘        └─────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Flow: Base → Solana
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. User inputs amount and selects token on Base
+2. KyberSwap aggregates best route to swap token → USDC
+3. USDC is approved for Circle's TokenMessenger contract
+4. TokenMessenger burns USDC on Base, generates attestation
+5. Circle attests the burn (off-chain)
+6. USDC is minted to recipient on Solana
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Flow: Solana → Base
 
-## Learn More
+1. User inputs amount and selects token on Solana
+2. Jupiter aggregates best route to swap token → USDC
+3. TokenMessenger burns USDC on Solana
+4. Circle attests the burn
+5. USDC is minted to recipient on Base
 
-To learn more about Next.js, take a look at the following resources:
+## Tech Stack
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+| Layer | Technology |
+|-------|------------|
+| **Framework** | Next.js 16 (App Router) |
+| **Styling** | Tailwind CSS + DaisyUI |
+| **Wallet Auth** | Privy (Embedded Wallets) |
+| **EVM Integration** | wagmi + viem |
+| **Solana Integration** | @solana/web3.js |
+| **Base DEX** | KyberSwap Aggregator API |
+| **Solana DEX** | Jupiter Aggregator API |
+| **Bridge** | Circle CCTP |
+| **Gas Sponsorship** | Privy Native Sponsorship |
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Setup
 
-## Deploy on Vercel
+### Prerequisites
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- Node.js 18+
+- Yarn or npm
+- Privy account with app configured
+- (Optional) KyberSwap API key
+- (Optional) Jupiter API key
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/cross-chain-app.git
+cd cross-chain-app
+
+# Install dependencies
+yarn install
+```
+
+### Environment Variables
+
+Create a `.env.local` file in the root directory:
+
+```env
+# Required: Privy Configuration
+NEXT_PUBLIC_PRIVY_APP_ID=your_privy_app_id
+PRIVY_APP_SECRET=your_privy_app_secret
+
+# Optional: API Keys for better rate limits
+NEXT_PUBLIC_KYBERSWAP_CLIENT_ID=cross-chain-app
+NEXT_PUBLIC_JUPITER_API_KEY=your_jupiter_api_key
+```
+
+## Local Development
+
+```bash
+# Start development server
+yarn dev
+
+# Build for production
+yarn build
+
+# Start production server
+yarn start
+```
+
+The app will be available at `http://localhost:3000`
+
+## Features
+
+- **🔐 Embedded Wallets**: Users get wallets automatically on login (email, Google, Twitter)
+- **⛽ Gas Sponsorship**: Transactions are sponsored - users don't need native tokens for gas
+- **🔄 Any Token → USDC**: Swap any supported token to USDC before bridging
+- **🌉 Native USDC Bridge**: Uses Circle CCTP for secure, 1:1 USDC transfers
+- **🎨 Premium UI**: Dark mode with glassmorphism, gradients, and smooth animations
+- **📱 Responsive**: Works on desktop and mobile
+
+## Security Considerations
+
+- All bridging uses Circle's audited CCTP contracts
+- Privy handles wallet security with TEE (Trusted Execution Environment)
+- No wrapped or synthetic tokens - only native USDC
+- Rate limiting recommended for gas sponsorship
+
+## License
+
+MIT
