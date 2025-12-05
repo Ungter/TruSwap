@@ -447,15 +447,22 @@ const SolanaToBase = () => {
         setLoading(true);
         setQuote(null);
         try {
-            // Using lite-api.jup.ag - public free endpoint (quote-api.jup.ag DNS issues)
-            const quoteResponse = await fetch(`https://lite-api.jup.ag/v6/quote?inputMint=${tokenIn}&outputMint=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v&amount=${Math.floor(parseFloat(amount) * 1e9)}&slippageBps=50`);
-            const quoteData = await quoteResponse.json();
+            // Using Jupiter Ultra API - combines quote and order in one request
+            const orderUrl = `https://api.jup.ag/ultra/v1/order?inputMint=${tokenIn}&outputMint=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v&amount=${Math.floor(parseFloat(amount) * 1e9)}&taker=${solanaWallet.address}`;
 
-            if (quoteData.outAmount) {
-                setQuote(quoteData);
+            const headers: Record<string, string> = {};
+            if (process.env.NEXT_PUBLIC_JUPITER_API_KEY) {
+                headers["x-api-key"] = process.env.NEXT_PUBLIC_JUPITER_API_KEY;
+            }
+
+            const orderResponse = await fetch(orderUrl, { headers });
+            const orderData = await orderResponse.json();
+
+            if (orderData.outAmount || orderData.transaction) {
+                setQuote(orderData);
             } else {
-                console.error("Error fetching quote:", quoteData);
-                setStatus("Failed to fetch quote from Jupiter");
+                console.error("Error fetching order:", orderData);
+                setStatus(orderData.error || "Failed to fetch quote from Jupiter Ultra");
             }
         } catch (error: any) {
             console.error("Error fetching quote:", error);
@@ -475,24 +482,13 @@ const SolanaToBase = () => {
         setStatus("Starting process...");
 
         try {
-            setStatus("Preparing swap transaction...");
-            const orderResponse = await fetch("https://api.jup.ag/ultra/v1/order", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "x-api-key": process.env.NEXT_PUBLIC_JUPITER_API_KEY || "",
-                },
-                body: JSON.stringify({
-                    userPublicKey: solanaWallet.address,
-                    quoteResponse: quote,
-                }),
-            });
-
-            const orderData = await orderResponse.json();
-            if (!orderData.swapTransaction) throw new Error("Failed to get swap transaction");
+            // Ultra API already provides the transaction in the order response
+            if (!quote.transaction) {
+                throw new Error("No transaction found in order response");
+            }
 
             setStatus("Please sign the transaction...");
-            const swapTransactionBuf = Buffer.from(orderData.swapTransaction, "base64");
+            const swapTransactionBuf = Buffer.from(quote.transaction, "base64");
             const transaction = VersionedTransaction.deserialize(swapTransactionBuf);
 
             // Use the embedded wallet's signTransaction method
@@ -500,15 +496,17 @@ const SolanaToBase = () => {
             const signedTransactionBase64 = Buffer.from((signedTransaction as any).serialize()).toString("base64");
 
             setStatus("Executing swap...");
+            const headers: Record<string, string> = { "Content-Type": "application/json" };
+            if (process.env.NEXT_PUBLIC_JUPITER_API_KEY) {
+                headers["x-api-key"] = process.env.NEXT_PUBLIC_JUPITER_API_KEY;
+            }
+
             const executeResponse = await fetch("https://api.jup.ag/ultra/v1/execute", {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "x-api-key": process.env.NEXT_PUBLIC_JUPITER_API_KEY || "",
-                },
+                headers,
                 body: JSON.stringify({
-                    swapTransaction: signedTransactionBase64,
-                    requestId: orderData.requestId,
+                    signedTransaction: signedTransactionBase64,
+                    requestId: quote.requestId,
                 }),
             });
 
