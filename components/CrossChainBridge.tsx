@@ -488,20 +488,73 @@ const SolanaToBase = () => {
                 throw new Error("No transaction found in order response");
             }
 
-            setStatus("Signing and sending transaction...");
+            // Step 1: Execute the Jupiter swap
+            setStatus("Step 1/2: Signing and sending swap transaction...");
 
             // Decode the base64 transaction to Uint8Array
             const transactionBytes = new Uint8Array(Buffer.from(quote.transaction, "base64"));
 
             // Use Privy's signAndSendTransaction hook for proper wallet handling
-            const result = await signAndSendTransaction({
+            const swapResult = await signAndSendTransaction({
                 transaction: transactionBytes,
                 wallet: solanaWallet,
             });
 
-            setStatus("Swap executed! Transaction signature: " + result.signature);
-            alert("Swap successful! USDC is now in your wallet. \n\nTransaction: " + result.signature + "\n\nBridging from Solana is not fully implemented in this demo. Please use the official Circle bridge or wait for the next update.");
-            setStatus("Swap successful. Bridging pending implementation.");
+            setStatus("Swap executed! Waiting for confirmation...");
+
+            // Wait for the transaction to be confirmed
+            await new Promise(resolve => setTimeout(resolve, 5000));
+
+            // Step 2: Build CCTP bridge transaction via server-side API
+            setStatus("Step 2/2: Building bridge transaction...");
+
+            // Get the USDC amount from the swap quote
+            const usdcAmount = quote.outAmount || "0";
+
+            if (BigInt(usdcAmount) <= BigInt(0)) {
+                throw new Error("Invalid USDC amount from swap");
+            }
+
+            // Call server API to build the bridge transaction with keypair signature
+            const bridgeResponse = await fetch("/api/bridge/solana-to-base", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    amount: usdcAmount,
+                    userPublicKey: solanaWallet.address,
+                    mintRecipient: recipient,
+                }),
+            });
+
+            const bridgeData = await bridgeResponse.json();
+
+            if (!bridgeData.success) {
+                throw new Error(bridgeData.error || "Failed to build bridge transaction");
+            }
+
+            setStatus("Signing bridge transaction...");
+
+            // The server returned a partially signed transaction
+            // Now the user needs to add their signature
+            const bridgeTxBytes = new Uint8Array(Buffer.from(bridgeData.transaction, "base64"));
+
+            // Sign and send the bridge transaction
+            const bridgeResult = await signAndSendTransaction({
+                transaction: bridgeTxBytes,
+                wallet: solanaWallet,
+            });
+
+            setStatus("Bridge transaction sent! Signature: " + bridgeResult.signature.slice(0, 20) + "...");
+
+            alert(
+                "🎉 Success! Your USDC is being bridged to Base.\n\n" +
+                "Swap TX: " + swapResult.signature + "\n\n" +
+                "Bridge TX: " + bridgeResult.signature + "\n\n" +
+                "⏳ Please wait 5-15 minutes for the USDC to arrive on Base.\n" +
+                "Circle's attestation service will process the transfer."
+            );
+
+            setStatus("Bridge submitted! Wait 5-15 min for USDC to arrive on Base.");
 
         } catch (error) {
             console.error("Error in Swap & Bridge:", error);

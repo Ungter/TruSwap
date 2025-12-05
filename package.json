@@ -9,11 +9,16 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@circle-fin/adapter-solana": "^1.1.2",
+    "@circle-fin/adapter-viem-v2": "^1.1.1",
+    "@circle-fin/bridge-kit": "^1.1.2",
+    "@coral-xyz/anchor": "^0.32.1",
     "@jup-ag/plugin": "^1.0.9",
     "@privy-io/node": "^0.6.2",
     "@privy-io/react-auth": "^3.8.1",
     "@privy-io/wagmi": "^2.1.0",
     "@solana-program/memo": "^0.10.0",
+    "@solana/spl-token": "^0.4.14",
     "@solana/wallet-adapter-base": "^0.9.27",
     "@solana/wallet-adapter-react": "^0.15.39",
     "@solana/wallet-adapter-react-ui": "^0.9.39",

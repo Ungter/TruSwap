@@ -1,11 +1,13 @@
-# CrossPay - Cross-Chain Bridge Application
+I didnt have time to do a demo :(
+Also only base bridges are working right now, I also didn't have time to fix the CCTP after the user swaps for USDC on solana.
+
+# TruSwap - Cross-Chain Bridge Application
 
 A seamless cross-chain bridge enabling USDC transfers between **Base** (Ethereum L2) and **Solana** using Circle's Cross-Chain Transfer Protocol (CCTP).
 
 ## Table of Contents
 
 - [Problem Being Solved](#problem-being-solved)
-- [Layer 2 Advantages](#layer-2-advantages)
 - [Architecture Overview](#architecture-overview)
 - [Tech Stack](#tech-stack)
 - [Setup](#setup)
@@ -21,27 +23,6 @@ The reason I created this app is because theres always sometimes when I try to b
 
 We use Kyberswap and Jupiter to aggregate the best route to swap any token to USDC, and then use Circle's CCTP to bridge the USDC to Solana. 
 
-
-## Layer 2 Advantages
-
-### Why Base?
-
-Base is an Ethereum L2 built on the OP Stack (Optimistic Rollup) that provides:
-
-| Feature | Ethereum Mainnet | Base L2 |
-|---------|-----------------|---------|
-| Transaction Cost | $5-50+ | $0.01-0.10 |
-| Confirmation Time | 12-15 seconds | <2 seconds |
-| Throughput | ~15 TPS | ~2000+ TPS |
-| Security | Native | Inherited from Ethereum |
-
-### EVM Compatibility
-
-Base maintains full EVM compatibility, meaning:
-- All Ethereum smart contracts work without modification
-- Standard tooling (Hardhat, Foundry, ethers.js) works seamlessly
-- Existing DeFi protocols can be accessed directly
-- Circle's native USDC and CCTP contracts are deployed on Base
 
 ## Architecture Overview
 

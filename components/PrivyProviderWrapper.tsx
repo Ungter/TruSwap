@@ -40,8 +40,8 @@ export const PrivyProviderWrapper = ({ children }: { children: React.ReactNode }
                 solana: {
                     rpcs: {
                         "solana:mainnet": {
-                            rpc: createSolanaRpc("https://api.mainnet-beta.solana.com"),
-                            rpcSubscriptions: createSolanaRpcSubscriptions("wss://api.mainnet-beta.solana.com"),
+                            rpc: createSolanaRpc("https://solana-rpc.publicnode.com"),
+                            rpcSubscriptions: createSolanaRpcSubscriptions("wss://rpc.ankr.com/solana/ws/ebb70000455a1d87d3a500791004b558fb0d10789cae7d920590f4226669ea17"),
                         },
                     },
                 },
